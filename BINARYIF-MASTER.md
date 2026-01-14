@@ -1,8 +1,14 @@
-# BINARYIF MASTER CANONICAL DOCUMENT
+# BINARYIF — Master Canonical Document (v1.0)
 
-This document is the authoritative specification for BinaryIF.
+No irreversible action may occur unless authority has already resolved to TRUE.
 
-BinaryIF enforces the invariant:
-No irreversible action may occur unless authority has resolved to TRUE prior to execution.
+BinaryIF is the deterministic authorization layer between intent and execution.
 
-(Full master document content retained from ChatGPT session.)
+BinaryIF evaluates:
+AUTHORIZED(action, evidence, ruleset, context) ∈ { TRUE, FALSE }
+
+BinaryIF emits exactly one artifact:
+- PERMIT (TRUE)
+- WITHHOLD (FALSE)
+
+BinaryIF is fail-closed and replayable.
