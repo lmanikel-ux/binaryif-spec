@@ -2,21 +2,21 @@
   "trust_store_id": "binaryif-trust-store-demo",
   "trust_store_version": "0.3.0",
   "binaryif_artifact_keys": {
-    "binaryif-artifact-01": "P0+1eSkmkvpPVvyUX5X5mEap4MtWPffS3oMcsdByWxw="
+    "binaryif-artifact-01": "ElC6u5Uy80+3B2D25f2p8jhmCJk8OuROp7ITtFeSWT4="
   },
   "authority_keys": {
-    "cfo-01": "gLTxsYh3B2viGUhOATJ1g3YGt9Cwg8wZcU6X2nAFNh0="
+    "cfo-01": "/tKypGP2GQRH7ovmstfGb42wuHtsuqaug4J9DIAqgYk="
   },
   "binaryif_artifact_key_validity": {
     "binaryif-artifact-01": {
-      "not_before_epoch": 1768345045,
-      "not_after_epoch": 1799967445
+      "not_before_epoch": 1768345658,
+      "not_after_epoch": 1799968058
     }
   },
   "authority_key_validity": {
     "cfo-01": {
-      "not_before_epoch": 1768345045,
-      "not_after_epoch": 1799967445
+      "not_before_epoch": 1768345658,
+      "not_after_epoch": 1799968058
     }
   }
 }

@@ -2,8 +2,8 @@
   "binaryif_version": "0.1",
   "artifact_type": "PERMIT",
   "decision": "TRUE",
-  "issued_at": 1768431446,
-  "expires_at": 1768431746,
+  "issued_at": 1768432059,
+  "expires_at": 1768432359,
   "action_hash": "c50c2383f8cbcfdc3d55831eee6050c27130981fd3870973afb1472573faf8dc",
   "ruleset": {
     "ruleset_id": "wire_transfer.high_value",
@@ -14,19 +14,19 @@
     "bundle_hash": "504fc4ab07dda15df43f19dca06c2157d5aec76248c7450fbbe59bbe32a36c9c"
   },
   "context": {
-    "context_hash": "e056a541ff6776a43e358416ef9d175e6785ba1f2b8001121ebcd8eb697b66d4"
+    "context_hash": "9d6de3888fbaa78f4350ded72c92b1f6ef22887fc45075d8f48d76dec6437fe1"
   },
-  "nonce": "2603f94928b233c8ae2b7545c766963c",
-  "permit_id": "b366f36c6022081d9b8ca7d9c266bdb1",
+  "nonce": "abad5724a6f56ef1b32a53869f8ea64f",
+  "permit_id": "ffac9aac240780038767847aeb72e305",
   "trust": {
-    "trust_store_hash": "f4feffb9b652fc4270a0c96653bac80a8effa4e545c3142372d9244e935e64e7",
+    "trust_store_hash": "4864773eaef1b652530a4fc274b5c73bb92729fb5d8958952315d126b8d558a0",
     "revocation_list_hash": "65ea3a1e296bc8dc55d49d26278623c2f58c92109afba32f91b8c89026db0692"
   },
   "signatures": [
     {
       "kid": "binaryif-artifact-01",
       "alg": "ed25519",
-      "sig_b64": "joRBmneUegxiA/6R1OaUtYORO2w1GR09GbMtCIlv2iOOPlgs0+0jh+11PKqnntcHRLH0QQcL2Shom6f0Uof4CA=="
+      "sig_b64": "QBbifBpn6CJEPfs1P0QYbpKPrDRgicY7kYU2zC7mpKdU+EoBrvKERDry3gUcDD4wff+VwiZcwLVC5+VTits7AA=="
     }
   ]
 }
