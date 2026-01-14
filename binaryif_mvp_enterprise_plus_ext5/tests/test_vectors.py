@@ -235,3 +235,216 @@ def test_tv20_verifier_validates():
     import subprocess, sys
     out = subprocess.check_output([sys.executable, "verifier/verify.py", "artifacts/permit.json", "fixtures/action.json", "rules/wire_ruleset.json", "trust/trust_store.json"])
     assert b"VALID" in out
+
+
+# ============================================================
+# EXECUTION BINDING CONFORMANCE TESTS (TV-21 through TV-27)
+# ============================================================
+
+# TV-21: Execute returns EXECUTION_RECEIPT with correct structure
+def test_tv21_execution_receipt_structure():
+    """Verify that execute_wire returns a properly structured EXECUTION_RECEIPT."""
+    action = load("fixtures/action.json")
+    evidence = load("fixtures/evidence.json")
+    ah = sha256_hex(canonicalize(action))
+    cfo = make_cfo(ah)
+    ctx = {"remaining_daily_limit": 1000000, "cfo_token": cfo}
+    permit = authorize(action, evidence, ctx)
+    
+    r = execute(action, permit)
+    assert r.status_code == 200
+    receipt = r.json()
+    
+    # Verify receipt structure
+    assert receipt.get("artifact_type") == "EXECUTION_RECEIPT"
+    assert receipt.get("binaryif_version") == "0.1"
+    assert receipt.get("permit_id") == permit.get("permit_id")
+    assert receipt.get("permit_hash")  # Must have permit hash
+    assert receipt.get("action_hash") == permit.get("action_hash")
+    assert receipt.get("executed_at")  # Must have execution timestamp
+    assert receipt.get("receipt_id")  # Must have unique ID
+    assert receipt.get("nonce")  # Must have nonce
+    
+    # Verify execution environment
+    env = receipt.get("execution_environment", {})
+    assert env.get("environment_id")
+    assert env.get("environment_type") in ["interceptor", "native"]
+    
+    # Verify execution result
+    result = receipt.get("execution_result", {})
+    assert result.get("status") == "SUCCESS"
+    assert result.get("external_reference")  # wire_id
+    
+    # Verify signature
+    sigs = receipt.get("signatures", [])
+    assert len(sigs) >= 1
+    assert sigs[0].get("kid")
+    assert sigs[0].get("sig_b64")
+
+
+# TV-22: EXECUTION_RECEIPT.permit_hash matches hash(PERMIT body)
+def test_tv22_receipt_permit_hash_binding():
+    """Verify that the receipt's permit_hash correctly binds to the permit."""
+    action = load("fixtures/action.json")
+    evidence = load("fixtures/evidence.json")
+    ah = sha256_hex(canonicalize(action))
+    cfo = make_cfo(ah)
+    ctx = {"remaining_daily_limit": 1000000, "cfo_token": cfo}
+    permit = authorize(action, evidence, ctx)
+    
+    r = execute(action, permit)
+    assert r.status_code == 200
+    receipt = r.json()
+    
+    # Calculate expected permit hash
+    permit_body = dict(permit)
+    permit_body.pop("signatures", None)
+    expected_hash = sha256_hex(canonicalize(permit_body))
+    
+    assert receipt.get("permit_hash") == expected_hash
+
+
+# TV-23: Single-use enforcement - second execution returns same receipt (idempotency)
+def test_tv23_single_use_idempotency():
+    """Verify that attempting to use a consumed permit returns the existing receipt."""
+    action = load("fixtures/action.json")
+    evidence = load("fixtures/evidence.json")
+    ah = sha256_hex(canonicalize(action))
+    cfo = make_cfo(ah)
+    ctx = {"remaining_daily_limit": 1000000, "cfo_token": cfo}
+    permit = authorize(action, evidence, ctx)
+    
+    # First execution
+    r1 = execute(action, permit)
+    assert r1.status_code == 200
+    receipt1 = r1.json()
+    
+    # Second execution - should return same receipt (idempotent)
+    r2 = execute(action, permit)
+    # Could be 200 (returning existing receipt) or 403 (blocked)
+    if r2.status_code == 200:
+        receipt2 = r2.json()
+        assert receipt2.get("receipt_id") == receipt1.get("receipt_id")
+    else:
+        assert r2.status_code == 403
+
+
+# TV-24: verify_chain endpoint validates correct chain
+def test_tv24_verify_chain_valid():
+    """Verify that the verify_chain endpoint correctly validates a valid chain."""
+    action = load("fixtures/action.json")
+    evidence = load("fixtures/evidence.json")
+    ah = sha256_hex(canonicalize(action))
+    cfo = make_cfo(ah)
+    ctx = {"remaining_daily_limit": 1000000, "cfo_token": cfo}
+    permit = authorize(action, evidence, ctx)
+    
+    r = execute(action, permit)
+    assert r.status_code == 200
+    receipt = r.json()
+    
+    # Verify the chain
+    verify_r = client.post("/insurer/verify_chain", json={
+        "permit": permit,
+        "receipt": receipt,
+        "action": action
+    })
+    assert verify_r.status_code == 200
+    result = verify_r.json()
+    
+    assert result.get("valid") == True
+    assert len(result.get("checks", [])) >= 7
+    assert result.get("chain_summary")
+    assert result["chain_summary"]["permit_id"] == permit.get("permit_id")
+    assert result["chain_summary"]["receipt_id"] == receipt.get("receipt_id")
+
+
+# TV-25: verify_chain detects tampered receipt
+def test_tv25_verify_chain_tampered_receipt():
+    """Verify that the verify_chain endpoint detects a tampered receipt."""
+    action = load("fixtures/action.json")
+    evidence = load("fixtures/evidence.json")
+    ah = sha256_hex(canonicalize(action))
+    cfo = make_cfo(ah)
+    ctx = {"remaining_daily_limit": 1000000, "cfo_token": cfo}
+    permit = authorize(action, evidence, ctx)
+    
+    r = execute(action, permit)
+    assert r.status_code == 200
+    receipt = r.json()
+    
+    # Tamper with the receipt
+    receipt["permit_hash"] = "0" * 64  # Invalid hash
+    
+    # Verify the chain
+    verify_r = client.post("/insurer/verify_chain", json={
+        "permit": permit,
+        "receipt": receipt,
+        "action": action
+    })
+    assert verify_r.status_code == 200
+    result = verify_r.json()
+    
+    assert result.get("valid") == False
+    # At least one check should fail
+    failed_checks = [c for c in result.get("checks", []) if not c.get("result")]
+    assert len(failed_checks) >= 1
+
+
+# TV-26: verify_chain detects action hash mismatch
+def test_tv26_verify_chain_action_mismatch():
+    """Verify that the verify_chain endpoint detects action hash inconsistency."""
+    action = load("fixtures/action.json")
+    evidence = load("fixtures/evidence.json")
+    ah = sha256_hex(canonicalize(action))
+    cfo = make_cfo(ah)
+    ctx = {"remaining_daily_limit": 1000000, "cfo_token": cfo}
+    permit = authorize(action, evidence, ctx)
+    
+    r = execute(action, permit)
+    assert r.status_code == 200
+    receipt = r.json()
+    
+    # Use a different action
+    different_action = load("fixtures/action_low.json")
+    
+    # Verify the chain with wrong action
+    verify_r = client.post("/insurer/verify_chain", json={
+        "permit": permit,
+        "receipt": receipt,
+        "action": different_action
+    })
+    assert verify_r.status_code == 200
+    result = verify_r.json()
+    
+    assert result.get("valid") == False
+
+
+# TV-27: Receipt logged to WORM log
+def test_tv27_receipt_logged_to_worm():
+    """Verify that execution receipts are logged to the artifact log."""
+    action = load("fixtures/action.json")
+    evidence = load("fixtures/evidence.json")
+    ah = sha256_hex(canonicalize(action))
+    cfo = make_cfo(ah)
+    ctx = {"remaining_daily_limit": 1000000, "cfo_token": cfo}
+    permit = authorize(action, evidence, ctx)
+    
+    before = client.get("/artifact_log").json()
+    
+    r = execute(action, permit)
+    assert r.status_code == 200
+    receipt = r.json()
+    
+    after = client.get("/artifact_log").json()
+    
+    # Log should have grown by at least 1 (the receipt)
+    assert len(after) >= len(before) + 1
+    
+    # Find the receipt in the log
+    receipt_entries = [e for e in after if e.get("artifact_type") == "EXECUTION_RECEIPT"]
+    assert len(receipt_entries) >= 1
+    
+    # Verify the receipt ID is in the log
+    receipt_ids = [e.get("artifact_id") for e in receipt_entries]
+    assert receipt.get("receipt_id") in receipt_ids

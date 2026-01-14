@@ -1,11 +1,12 @@
 
 # BinaryIF MVP (Enterprise+) — Wire Transfer Control Boundary
 
-This package includes **all three requested hardening upgrades**:
+This package includes **all four core capabilities**:
 
-A) **Insurer-grade conformance suite (20 vectors + PASS/FAIL report)**  
+A) **Insurer-grade conformance suite (27 vectors + PASS/FAIL report)**  
 B) **KMS/HSM signing adapter (AWS KMS Ed25519 supported; Vault/HSM seam)**  
-C) **WORM-grade artifact log export (S3 Object Lock / Legal Hold adapter + local fallback)**
+C) **WORM-grade artifact log export (S3 Object Lock / Legal Hold adapter + local fallback)**  
+D) **Execution Binding — Closed-loop chain-of-custody with cryptographic receipts** *(NEW)*
 
 This is still a *reference implementation* (single irreversible action: high-value wire), but it is now shaped
 for enterprise validation and insurer demonstrations.
@@ -22,7 +23,11 @@ python tools/demo_authorize_and_execute.py
 
 ## 2) Run verifier (independent)
 ```bash
+# Verify a PERMIT
 python verifier/verify.py artifacts/permit.json fixtures/action.json rules/wire_ruleset.json trust/trust_store.json
+
+# Verify the complete chain (PERMIT + RECEIPT)
+python verifier/verify_chain.py artifacts/permit.json artifacts/receipt.json fixtures/action.json trust/trust_store.json
 ```
 
 ## 3) Conformance suite (insurer-grade)
@@ -69,11 +74,106 @@ and can export the log as JSON.
 
 ---
 
+---
+
+## 6) Execution Binding (Closed-Loop Chain-of-Custody)
+
+Execution Binding closes the loop between authorization and action. It transforms BinaryIF from
+"we prove you said yes" to "we prove what happened."
+
+### How It Works
+
+1. **PERMIT issued** → Agent authorized to execute action
+2. **Execution attempted** → Interceptor validates PERMIT and executes action
+3. **EXECUTION_RECEIPT generated** → Signed attestation of what happened
+4. **PERMIT consumed** → Single-use enforcement prevents replay
+5. **Receipt logged** → WORM log captures the complete chain
+
+### Key Components
+
+| Component | File | Purpose |
+|-----------|------|--------|
+| Receipt Builder | `app/receipt.py` | Generates EXECUTION_RECEIPT artifacts |
+| Consumption DB | `app/db.py` | Atomic single-use permit enforcement |
+| Chain Verifier API | `app/main.py` | `/insurer/verify_chain` endpoint |
+| Offline Verifier | `verifier/verify_chain.py` | Air-gapped chain verification |
+
+### EXECUTION_RECEIPT Structure
+
+```json
+{
+  "binaryif_version": "0.1",
+  "artifact_type": "EXECUTION_RECEIPT",
+  "permit_id": "<links to PERMIT>",
+  "permit_hash": "<SHA-256 of PERMIT body>",
+  "action_hash": "<must match PERMIT.action_hash>",
+  "executed_at": 1736899200,
+  "execution_environment": {
+    "environment_id": "binaryif-interceptor-001",
+    "environment_type": "interceptor"
+  },
+  "execution_result": {
+    "status": "SUCCESS",
+    "external_reference": "<wire_id from bank>",
+    "error_code": null
+  },
+  "receipt_id": "<unique ID>",
+  "nonce": "<anti-replay>",
+  "signatures": [...]
+}
+```
+
+### Insurer Verification API
+
+```bash
+# Verify complete chain via API
+curl -X POST http://localhost:8000/insurer/verify_chain \
+  -H "Content-Type: application/json" \
+  -d '{"permit": {...}, "receipt": {...}, "action": {...}}'
+```
+
+Response:
+```json
+{
+  "valid": true,
+  "checks": [
+    {"check": "permit_signature", "result": true, "description": "PERMIT has valid cryptographic signature"},
+    {"check": "permit_not_expired", "result": true, "description": "PERMIT was valid at execution time"},
+    {"check": "receipt_signature", "result": true, "description": "EXECUTION_RECEIPT has valid cryptographic signature"},
+    {"check": "permit_id_match", "result": true, "description": "RECEIPT references correct PERMIT ID"},
+    {"check": "permit_hash_match", "result": true, "description": "RECEIPT contains correct PERMIT hash"},
+    {"check": "action_hash_chain", "result": true, "description": "ACTION hash consistent across all artifacts"},
+    {"check": "execution_success", "result": true, "description": "Execution completed successfully"}
+  ],
+  "chain_summary": {
+    "permit_id": "...",
+    "receipt_id": "...",
+    "action_hash": "...",
+    "authorized_at": 1736899100,
+    "executed_at": 1736899200,
+    "external_reference": "<wire_id>"
+  }
+}
+```
+
+### Why This Matters for Insurers
+
+Without Execution Binding:
+> "We can prove the action was authorized."
+
+With Execution Binding:
+> "We can prove the action was authorized, executed exactly as authorized, and executed exactly once. Here is the cryptographic proof."
+
+This transforms claims investigation from a 6-month forensic audit into a 5-step verification algorithm.
+
+---
+
 ## Design constraints (non-negotiable)
 - Fail-closed (indeterminacy -> WITHHOLD)
 - Deterministic replay verification
 - Permit is single-use and time-bounded
 - Execution is blocked absent valid PERMIT
+- **Execution produces cryptographic receipt bound to PERMIT** *(NEW)*
 - Public site should not disclose implementation details (keep this repo private during early insurer work)
 
 

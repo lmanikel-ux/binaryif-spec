@@ -36,6 +36,14 @@ def init_db():
       entry_hash TEXT NOT NULL,
       artifact_json TEXT NOT NULL
     );""")
+    # Execution Binding: consumed_permits table for single-use enforcement
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS consumed_permits (
+      permit_id TEXT PRIMARY KEY,
+      receipt_id TEXT NOT NULL,
+      consumed_at INTEGER NOT NULL,
+      receipt_json TEXT NOT NULL
+    );""")
     conn.commit()
     conn.close()
 
@@ -112,6 +120,65 @@ def append_artifact_log(artifact_id: str, artifact_type: str, issued_at: int, pa
 def get_permit_json(permit_id: str):
     conn = _connect()
     cur = conn.execute('SELECT artifact_json FROM permits WHERE permit_id=?', (permit_id,))
+    row = cur.fetchone()
+    conn.close()
+    return row[0] if row else None
+
+
+# ============================================================
+# Execution Binding: Single-Use Permit Consumption
+# ============================================================
+
+def is_permit_consumed(permit_id: str) -> bool:
+    """
+    Check if a permit has already been consumed (executed).
+    """
+    conn = _connect()
+    cur = conn.execute("SELECT 1 FROM consumed_permits WHERE permit_id=?", (permit_id,))
+    row = cur.fetchone()
+    conn.close()
+    return row is not None
+
+
+def consume_permit_atomic(permit_id: str, receipt_id: str, consumed_at: int, receipt_json: str) -> bool:
+    """
+    Atomically mark a permit as consumed.
+    
+    Returns True if successful, False if already consumed (race condition safe).
+    Uses INSERT OR IGNORE to handle concurrent attempts.
+    """
+    conn = _connect()
+    try:
+        cur = conn.execute(
+            "INSERT OR IGNORE INTO consumed_permits(permit_id, receipt_id, consumed_at, receipt_json) VALUES(?,?,?,?)",
+            (permit_id, receipt_id, consumed_at, receipt_json)
+        )
+        conn.commit()
+        success = cur.rowcount == 1
+        conn.close()
+        return success
+    except Exception:
+        conn.close()
+        return False
+
+
+def get_receipt_by_permit_id(permit_id: str) -> Optional[str]:
+    """
+    Retrieve the execution receipt JSON for a consumed permit.
+    """
+    conn = _connect()
+    cur = conn.execute("SELECT receipt_json FROM consumed_permits WHERE permit_id=?", (permit_id,))
+    row = cur.fetchone()
+    conn.close()
+    return row[0] if row else None
+
+
+def get_receipt_by_receipt_id(receipt_id: str) -> Optional[str]:
+    """
+    Retrieve the execution receipt JSON by receipt_id.
+    """
+    conn = _connect()
+    cur = conn.execute("SELECT receipt_json FROM consumed_permits WHERE receipt_id=?", (receipt_id,))
     row = cur.fetchone()
     conn.close()
     return row[0] if row else None
