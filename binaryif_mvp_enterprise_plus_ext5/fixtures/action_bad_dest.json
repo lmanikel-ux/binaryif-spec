@@ -1,0 +1,15 @@
+
+{
+  "action_type": "wire_transfer",
+  "action_id": "demo-003",
+  "tenant_id": "tenant-001",
+  "environment_id": "prod",
+  "parameters": {
+    "amount": "500000",
+    "currency": "USD",
+    "destination_account_hash": "sha256:NOT_IN_ALLOWLIST",
+    "beneficiary_id": "vendor-123",
+    "memo": "invoice-987",
+    "payment_rail": "fedwire"
+  }
+}

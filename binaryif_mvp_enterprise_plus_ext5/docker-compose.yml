@@ -1,0 +1,19 @@
+
+services:
+  binaryif:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - BINARYIF_SIGNER=file
+      - TRUST_STORE_PATH=trust/trust_store.json
+      - REVOCATION_LIST_PATH=trust/revocation_list.json
+      - BINARYIF_ENV=dev
+      - POLICY_ENGINE=none
+      - OPA_URL=http://opa:8181/v1/data/binaryif/allow
+
+  opa:
+    image: openpolicyagent/opa:latest
+    command: ["run", "--server"]
+    ports:
+      - "8181:8181"

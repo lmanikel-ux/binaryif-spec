@@ -1,0 +1,8 @@
+
+{
+  "bundle_id": "bundle-001",
+  "references": [
+    { "type": "invoice_hash", "ref": "content:sha256:invoice-demo" },
+    { "type": "payee_allowlist_snapshot", "ref": "content:sha256:allowlist-001" }
+  ]
+}

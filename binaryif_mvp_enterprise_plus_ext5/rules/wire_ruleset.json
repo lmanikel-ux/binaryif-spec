@@ -1,0 +1,9 @@
+
+{
+  "ruleset_id": "wire_transfer.high_value",
+  "ruleset_version": "0.3.0",
+  "threshold_amount": 250000,
+  "permit_ttl_seconds": 300,
+  "cfo_freshness_seconds": 300,
+  "max_clock_skew_seconds": 30
+}

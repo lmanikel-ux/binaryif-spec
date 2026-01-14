@@ -1,0 +1,7 @@
+
+{
+  "revocation_list_id": "binaryif-rl-demo",
+  "version": "0.2.0",
+  "effective_at_epoch": 0,
+  "revoked_kids": []
+}
