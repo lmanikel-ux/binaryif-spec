@@ -1,0 +1,1 @@
+Adversarial agents assumed.
