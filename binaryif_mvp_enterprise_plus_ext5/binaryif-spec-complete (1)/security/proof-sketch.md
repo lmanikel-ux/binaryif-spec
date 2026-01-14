@@ -1,0 +1,1 @@
+Boolean authority proof sketch.
