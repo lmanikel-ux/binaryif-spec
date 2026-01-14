@@ -182,3 +182,21 @@ def get_receipt_by_receipt_id(receipt_id: str) -> Optional[str]:
     row = cur.fetchone()
     conn.close()
     return row[0] if row else None
+
+
+# ============================================================
+# Test Support: Database Reset
+# ============================================================
+
+def reset_db():
+    """
+    Reset the database for test isolation.
+    Clears all tables but preserves schema.
+    """
+    conn = _connect()
+    conn.execute("DELETE FROM permits")
+    conn.execute("DELETE FROM nonces")
+    conn.execute("DELETE FROM artifact_log")
+    conn.execute("DELETE FROM consumed_permits")
+    conn.commit()
+    conn.close()

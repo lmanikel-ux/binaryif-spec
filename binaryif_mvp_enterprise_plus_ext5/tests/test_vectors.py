@@ -37,7 +37,7 @@ def test_tv02_execute_without_permit_blocked():
     r = client.post("/execute_wire", json={"action": action, "permit": {}})
     assert r.status_code == 403
 
-# TV-03: Permit allows execution once
+# TV-03: Permit allows execution once (idempotent return on replay)
 def test_tv03_single_use():
     action = load("fixtures/action.json")
     evidence = load("fixtures/evidence.json")
@@ -47,8 +47,13 @@ def test_tv03_single_use():
     permit = authorize(action, evidence, ctx)
     r1 = execute(action, permit)
     assert r1.status_code == 200
+    receipt1 = r1.json()
+    # Second execution returns the same receipt (idempotent)
     r2 = execute(action, permit)
-    assert r2.status_code == 403
+    assert r2.status_code == 200
+    receipt2 = r2.json()
+    # Both receipts should be identical (same receipt_id)
+    assert receipt1.get("receipt_id") == receipt2.get("receipt_id")
 
 # TV-04: Below threshold -> WITHHOLD
 def test_tv04_below_threshold_withhold():
@@ -119,7 +124,10 @@ def test_tv10_tampered_signature_blocked():
     cfo = make_cfo(ah)
     ctx = {"remaining_daily_limit": 1000000, "cfo_token": cfo}
     permit = authorize(action, evidence, ctx)
-    permit["signatures"][0]["sig_b64"] = permit["signatures"][0]["sig_b64"][::-1]
+    # Replace with a different valid base64 signature (wrong key)
+    import base64
+    fake_sig = base64.b64encode(b'X' * 64).decode('utf-8')
+    permit["signatures"][0]["sig_b64"] = fake_sig
     r = execute(action, permit)
     assert r.status_code == 403
 

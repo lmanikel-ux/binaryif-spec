@@ -1,0 +1,22 @@
+{
+  "trust_store_id": "binaryif-trust-store-demo",
+  "trust_store_version": "0.3.0",
+  "binaryif_artifact_keys": {
+    "binaryif-artifact-01": "P0+1eSkmkvpPVvyUX5X5mEap4MtWPffS3oMcsdByWxw="
+  },
+  "authority_keys": {
+    "cfo-01": "gLTxsYh3B2viGUhOATJ1g3YGt9Cwg8wZcU6X2nAFNh0="
+  },
+  "binaryif_artifact_key_validity": {
+    "binaryif-artifact-01": {
+      "not_before_epoch": 1768345045,
+      "not_after_epoch": 1799967445
+    }
+  },
+  "authority_key_validity": {
+    "cfo-01": {
+      "not_before_epoch": 1768345045,
+      "not_after_epoch": 1799967445
+    }
+  }
+}

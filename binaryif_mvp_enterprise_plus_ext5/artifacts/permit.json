@@ -1,0 +1,32 @@
+{
+  "binaryif_version": "0.1",
+  "artifact_type": "PERMIT",
+  "decision": "TRUE",
+  "issued_at": 1768431446,
+  "expires_at": 1768431746,
+  "action_hash": "c50c2383f8cbcfdc3d55831eee6050c27130981fd3870973afb1472573faf8dc",
+  "ruleset": {
+    "ruleset_id": "wire_transfer.high_value",
+    "ruleset_version": "0.3.0",
+    "ruleset_hash": "3438f01aaf7f3912cbfc8df9bdb7b9f766f3c40643d8af117ae392ac2cada80c"
+  },
+  "evidence": {
+    "bundle_hash": "504fc4ab07dda15df43f19dca06c2157d5aec76248c7450fbbe59bbe32a36c9c"
+  },
+  "context": {
+    "context_hash": "e056a541ff6776a43e358416ef9d175e6785ba1f2b8001121ebcd8eb697b66d4"
+  },
+  "nonce": "2603f94928b233c8ae2b7545c766963c",
+  "permit_id": "b366f36c6022081d9b8ca7d9c266bdb1",
+  "trust": {
+    "trust_store_hash": "f4feffb9b652fc4270a0c96653bac80a8effa4e545c3142372d9244e935e64e7",
+    "revocation_list_hash": "65ea3a1e296bc8dc55d49d26278623c2f58c92109afba32f91b8c89026db0692"
+  },
+  "signatures": [
+    {
+      "kid": "binaryif-artifact-01",
+      "alg": "ed25519",
+      "sig_b64": "joRBmneUegxiA/6R1OaUtYORO2w1GR09GbMtCIlv2iOOPlgs0+0jh+11PKqnntcHRLH0QQcL2Shom6f0Uof4CA=="
+    }
+  ]
+}
