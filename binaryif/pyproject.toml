@@ -1,0 +1,83 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "binaryif"
+version = "1.0.0"
+description = "BinaryIF Protocol Reference Implementation - The Deterministic Authorization Layer for Irreversible Actions"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+requires-python = ">=3.9"
+authors = [
+    {name = "BinaryIF Working Group"}
+]
+keywords = [
+    "authorization",
+    "security",
+    "ai-safety",
+    "deterministic",
+    "irreversible-actions",
+    "protocol"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Healthcare Industry",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.optional-dependencies]
+crypto = ["pynacl>=1.5.0"]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "mypy>=1.0",
+    "black>=23.0",
+    "ruff>=0.1.0",
+]
+all = ["binaryif[crypto,dev]"]
+
+[project.scripts]
+binaryif = "binaryif.cli:main"
+
+[project.urls]
+Homepage = "https://binaryif.org"
+Documentation = "https://docs.binaryif.org"
+Repository = "https://github.com/binaryif/binaryif-python"
+Issues = "https://github.com/binaryif/binaryif-python/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["binaryif*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short"
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+
+[tool.black]
+line-length = 100
+target-version = ["py39"]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4"]
+ignore = ["E501"]
